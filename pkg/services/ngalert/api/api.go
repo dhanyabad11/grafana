@@ -30,6 +30,21 @@ import (
 // timeNow makes it possible to test usage of time
 var timeNow = time.Now
 
+func (api *API) RegisterHistoryApiEndpoints(m *metrics.API) {
+	logger := log.New("ngalert.api.history")
+
+	historyAPI := NewStateHistoryApi(&HistorySrv{
+		logger: logger,
+		hist:   api.Historian,
+		EnableLabelComparisonOperators: true, // Enables `=`, `!=`, `~` for label filters
+		EnableStateTransitionFilter:    true, // Supports `from` and `to` filters
+	})
+
+	// Correctly register API route without recursion
+	api.Router.Post("/api/v1/rules/history", historyAPI.HandleHistory)
+}
+
+
 type ExternalAlertmanagerProvider interface {
 	AlertmanagersFor(orgID int64) []*url.URL
 	DroppedAlertmanagersFor(orgID int64) []*url.URL
